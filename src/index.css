@@ -15,3 +15,73 @@ code {
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+
+.carousel-images-forward {
+  display: flex;
+  animation: slideInForward 0.5s ease-in;
+}
+
+.carousel-images-reverse {
+  display: flex;
+  animation: slideInReverse 0.5s ease-in;
+}
+
+.carousel-images {
+  display: flex;
+  transition: transform 0.5s ease-in;
+  overflow-x: scroll;
+  scroll-snap-type: x mandatory;
+  width: calc((100% + 1rem) * 2 - 1rem);
+}
+
+.carousel-images::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.image {
+  margin-right: 1rem;
+  scroll-snap-align: start;
+}
+
+.image {
+  transition: transform 0.5s ease-in-out;
+}
+
+
+.image-dragged-left {
+  transform: translateX(-10px);
+}
+
+.image-dragged-right {
+  transform: translateX(10px);
+}
+
+
+@keyframes slideInForward {
+  from {
+    transform: translateX(-5%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInReverse {
+  from {
+    transform: translateX(5%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}

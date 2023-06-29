@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import whiteLogo from "../assets/images/whiteLogo.jpg";
 import productImage from "../assets/images/product.jpg";
+import dogImage from "../assets/images/do.png";
+import pengImage from "../assets/images/pe.png";
 import { ArrowLeftCircle, XCircle, ArrowRighttCircle } from "../assets/icons";
 import { Modal, Box } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
@@ -9,28 +11,92 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 
 const Offer_item = (props) => {
   const [openModal, setOpenModal] = useState(false);
-  const [images, setImages] = useState([whiteLogo, productImage]);
+  const [images, setImages] = useState([
+    whiteLogo,
+    productImage,
+    pengImage,
+    dogImage,
+  ]);
   const [imgIndex, setImgIndex] = useState(images.length - 1);
   const [arrowVisibility, setArrowVisibility] = useState(true);
+  const [transitionClass, setTransitionClass] = useState("");
+  const [carouselClass, setClass] = useState("carousel-images");
+  const [dragStartX, setDragStartX] = useState(0);
+  const [draggedX, setDraggedX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [draggedClass, setDraggedClass] = useState("");
 
   const toggleModal = () => {
     setOpenModal(!openModal);
   };
 
   const handleImageChangeLeft = () => {
-    setImgIndex((prevIndex) => (prevIndex + 1) % images.length);
-    setArrowVisibility(false);
+    if (!isDragging) {
+      setArrowVisibility(false);
+      setImgIndex((prevIndex) => (prevIndex + 1) % images.length);
+      setClass("carousel-images-reverse");
+    }
   };
 
   const handleImageChangeRight = () => {
-    setImgIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
-    setArrowVisibility(true);
+    if (!isDragging) {
+      setArrowVisibility(true);
+      setImgIndex(
+        (prevIndex) => (prevIndex - 1 + images.length) % images.length
+      );
+      setClass("carousel-images-forward");
+    }
   };
 
   const handleImageClick = (index) => {
     setImgIndex(index);
     setOpenModal(true);
   };
+
+  const handleDragStart = (e) => {
+    setDragStartX(e.clientX);
+    setIsDragging(true);
+    setDraggedClass("image-dragged");
+  };
+
+  const handleDrag = (e) => {
+    if (isDragging) {
+      const draggedDistance = e.clientX - dragStartX;
+      setDraggedX(draggedDistance);
+
+      if (draggedDistance > 0) {
+        setDraggedClass("image-dragged-right");
+      } else if (draggedDistance < 0) {
+        setDraggedClass("image-dragged-left");
+      }
+    }
+  };
+const handleDragEnd = (e) => {
+  if (isDragging) {
+    const draggedDistance = e.clientX - dragStartX;
+    const threshold = 100;
+    const maxVisibleImages = 2;
+
+    const maxDragDistance = (images.length - maxVisibleImages) * 100;
+
+    if (draggedDistance > threshold) {
+      const clampedDragDistance = Math.min(draggedDistance, maxDragDistance);
+      const dragSteps = Math.floor(clampedDragDistance / 100);
+
+      setImgIndex(
+        (prevIndex) => (prevIndex - dragSteps + images.length) % images.length
+      );
+    } else if (draggedDistance < -threshold) {
+      const clampedDragDistance = Math.max(draggedDistance, -maxDragDistance);
+      const dragSteps = Math.floor(Math.abs(clampedDragDistance) / 100);
+
+      setImgIndex((prevIndex) => (prevIndex + dragSteps) % images.length);
+    }
+
+    setDraggedX(0);
+    setIsDragging(false);
+  }
+};
 
   let imgSrc = images[imgIndex];
   let price = props.price;
@@ -58,18 +124,42 @@ const Offer_item = (props) => {
             </div>
           )}
           <div className="mx-auto">
-            <div className="image-container flex items-center gap-2">
-              {images.map((image, index) => (
-                <img
-                  key={index}
-                  src={image}
-                  alt="test"
-                  className={`image max-w-[10rem] cursor-pointer h-fit min-h-[7rem] max-h-[8rem] ${
-                    imgIndex === index ? "main-image border-2 p-1" : ""
-                  }`}
-                  onClick={() => handleImageClick(index)}
-                />
-              ))}
+            <div
+              className={`image-container flex items-center gap-2`}
+              onMouseDown={handleDragStart}
+              onMouseMove={handleDrag}
+              onMouseUp={handleDragEnd}
+              onMouseLeave={handleDragEnd}
+              onTouchStart={handleDragStart}
+              onTouchMove={handleDrag}
+              onTouchEnd={handleDragEnd}
+              onTouchCancel={handleDragEnd}
+              onDragStart={(e) => e.preventDefault()}
+            >
+              <div className={`${carouselClass} flex gap-2`}>
+                {images.map((image, index) => {
+                  const isVisible =
+                    images.length === 2 ||
+                    (index >= imgIndex && index < imgIndex + 2) ||
+                    (index <= imgIndex && index > imgIndex - images.length + 2);
+
+                  return (
+                    <img
+                      key={index}
+                      src={image}
+                      alt="test"
+                      className={`image max-w-[10rem] cursor-pointer h-fit min-h-[7rem] max-h-[8rem] ${
+                        imgIndex === index
+                          ? "main-image border-2 p-1 active"
+                          : ""
+                      } ${transitionClass} ${
+                        isVisible ? "" : "hidden"
+                      } ${draggedClass}`}
+                      onClick={() => handleImageClick(index)}
+                    />
+                  );
+                })}
+              </div>
             </div>
           </div>
           {arrowVisibility === false && (
@@ -96,7 +186,7 @@ const Offer_item = (props) => {
               bgcolor: "none",
               boxShadow: 24,
               p: 4,
-              width: isSmallScreen ? "105%" : "70%", // Update the width based on screen size
+              width: isSmallScreen ? "105%" : "70%",
               outline: "none",
               borderRadius: 8,
             }}
